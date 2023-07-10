@@ -18,7 +18,7 @@ from pypozyx.tools.version_check import perform_latest_version_check
 class Localizer(object):
     """Continuously calls the Pozyx positioning function and prints its position."""
 
-    def __init__(self, pozyx, anchors, algorithm=POZYX_POS_ALG_UWB_ONLY, dimension=POZYX_3D, height=1000, remote_id=None):
+    def __init__(self, pozyx, anchors, master_id, algorithm=POZYX_POS_ALG_UWB_ONLY, dimension=POZYX_3D, height=1000, remote_id=None):
         self.pozyx = pozyx
 
         self.anchors = anchors
@@ -26,6 +26,7 @@ class Localizer(object):
         self.dimension = dimension
         self.height = height
         self.remote_id = remote_id
+        self.master_id = master_id
 
     def setup(self):
         """Sets up the Pozyx for positioning by calibrating its anchor list."""
@@ -35,11 +36,20 @@ class Localizer(object):
         print("")
         print("- System will auto start positioning")
         print("")
-        if self.remote_id is None:
-            self.pozyx.printDeviceInfo(self.remote_id)
-        else:
-            for device_id in [None, self.remote_id]:
-                self.pozyx.printDeviceInfo(device_id)
+        # if self.remote_id is None:
+            # self.pozyx.printDeviceInfo(self.remote_id)
+        # else:
+            # for device_id in [None, self.remote_id]:
+                # self.pozyx.printDeviceInfo(device_id)
+
+        for device_id in [self.remote_id]:
+            if device_id == self.master_id:
+                device_id = None
+            # firmware = pypozyx.SingleRegister()
+            # status = pozyx.getFirmwareVersion(firmware, device_id)
+            # print(firmware, ". ", status)
+
+            self.pozyx.printDeviceInfo(device_id)
 
         print("")
         print("------------POZYX POSITIONING V{} -------------".format(version))
@@ -132,9 +142,8 @@ if __name__ == "__main__":
         print("No Pozyx connected. Check your USB cable or your driver!")
         quit()
 
-    remote_id = 0x6878            # the one being tracked
-    # remote_id = 0x684c            # the one being tracked
-    remote_id = None              # the local device
+    remote_id = 0x1125        # the network ID of the remote device
+    master_id = 0x1125
 
     # configure if you want to route OSC to outside your localhost. Networking knowledge is required.
     ip = "127.0.0.1"
@@ -159,7 +168,7 @@ if __name__ == "__main__":
     height = 1000
 
     pozyx = PozyxSerial(serial_port)
-    r = Localizer(pozyx, anchors, algorithm, dimension, height, remote_id)
+    r = Localizer(pozyx, anchors, master_id, algorithm, dimension, height, remote_id)
     r.setup()
     while True:
         r.loop()
